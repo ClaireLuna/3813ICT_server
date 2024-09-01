@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  User
+  Admin
+  SuperAdmin
+}
+
+model User {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  username  String      @unique
+  hash      String
+  role      Role        @default(User)
+  GroupUser GroupUser[]
+  Group     Group[]
+}
+
+model Group {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  GroupUser   GroupUser[]
+  Channel     Channel[]
+  createdById String      @db.ObjectId
+  createdBy   User        @relation(fields: [createdById], references: [id])
+}
+
+model GroupUser {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id])
+  userId  String @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id])
+}
+
+model Channel {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id])
+  name    String
+}
