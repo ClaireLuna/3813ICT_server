@@ -22,7 +22,9 @@ enum Role {
 model User {
   id        String      @id @default(auto()) @map("_id") @db.ObjectId
   username  String      @unique
+  email     String
   hash      String
+  apiToken  String
   role      Role        @default(User)
   GroupUser GroupUser[]
   Group     Group[]

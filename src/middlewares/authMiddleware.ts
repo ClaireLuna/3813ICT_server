@@ -10,7 +10,9 @@ export default async function authMiddleware(
 ) {
   const authorization = req.headers.authorization;
   if (authorization) {
-    req.user = await prisma.user.findFirst({ where: { hash: authorization } });
+    req.user = await prisma.user.findFirst({
+      where: { apiToken: authorization },
+    });
   }
   next();
 }

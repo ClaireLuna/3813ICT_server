@@ -23,22 +23,26 @@ router.post(
     res: Response<{ token: string }>,
     next
   ) {
+    const { username, email, password } = req.body;
     const user = await prisma.user.findFirst({
       where: { username: req.body.username },
     });
     if (user) {
       next(new HttpError(401, "Username already exists"));
     } else {
-      const hash = createHash("sha256").update(req.body.password).digest("hex");
+      const hash = createHash("sha256").update(password).digest("hex");
+      const token = createHash("sha256").update(username).digest("hex");
       const user = await prisma.user.create({
         data: {
-          username: req.body.username,
+          username: username,
+          email: email,
           hash: hash,
+          apiToken: token,
           role: "User",
         },
       });
       if (user?.id) {
-        res.send({ token: hash });
+        res.send({ token: token });
       } else {
         next(new HttpError(401, "Bad Request"));
       }
@@ -58,7 +62,7 @@ router.post(
       where: { username: req.body.username, hash: hash },
     });
     if (user) {
-      res.send({ token: user.hash });
+      res.send({ token: user.apiToken });
     } else {
       next(new HttpError(403, "Unauthorised"));
     }
