@@ -5,19 +5,31 @@ import isUserInRole from "../../middlewares/isUserInRole";
 const prisma = new PrismaClient();
 const router = express.Router();
 
+// Create Group
 router.post(
-  "/group/create",
+  "/group",
   isUserInRole(["Admin", "SuperAdmin"]),
-  async function (req: Request, res: Response<{ id: string }>, next) {
+  async function (
+    req: Request,
+    res: Response<{ id: string; name: string }>,
+    next
+  ) {
     if (req.user == null) return next();
 
     const group = await prisma.group.create({
-      data: { name: req.body.name, createdById: req.user?.id },
+      data: {
+        name: req.body.name,
+        createdBy: {
+          connect: { id: req.user.id },
+        },
+      },
     });
 
-    res.send({ id: group.id });
+    res.send(group);
   }
 );
+
+// Get groups
 router.get(
   "/group",
   isUserInRole(["User", "Admin", "SuperAdmin"]),
@@ -28,14 +40,83 @@ router.get(
   ) {
     if (req.user == null) return next();
 
-    const groups = await prisma.group.findMany({});
+    let groups;
 
-    res.send(
-      groups.map((g) => ({
-        id: g.id,
-        name: g.name,
-      }))
-    );
+    if (req.user.role === "SuperAdmin") {
+      groups = await prisma.group.findMany();
+    } else {
+      groups = await prisma.group.findMany({
+        where: {
+          GroupUser: {
+            some: {
+              userId: req.user.id,
+            },
+          },
+        },
+      });
+    }
+
+    res.send(groups);
+  }
+);
+
+// Update group
+router.put(
+  "/group",
+  isUserInRole(["Admin", "SuperAdmin"]),
+  async function (
+    req: Request,
+    res: Response<{ id: string; name: string }>,
+    next
+  ) {
+    if (req.user == null) return next();
+
+    let group;
+
+    if (req.user.role === "SuperAdmin") {
+      group = await prisma.group.update({
+        where: { id: req.body.id },
+        data: {
+          name: req.body.name,
+        },
+      });
+    } else {
+      group = await prisma.group.update({
+        where: { id: req.body.id, createdBy: { id: req.user.id } },
+        data: {
+          name: req.body.name,
+        },
+      });
+    }
+
+    res.send(group);
+  }
+);
+
+// Remove group
+router.delete(
+  "/group",
+  isUserInRole(["Admin", "SuperAdmin"]),
+  async function (
+    req: Request,
+    res: Response<{ id: string; name: string }>,
+    next
+  ) {
+    if (req.user == null) return next();
+
+    let group;
+
+    if (req.user.role === "SuperAdmin") {
+      group = await prisma.group.delete({
+        where: { id: req.body.id },
+      });
+    } else {
+      group = await prisma.group.delete({
+        where: { id: req.body.id, createdBy: { id: req.user.id } },
+      });
+    }
+
+    res.send(group);
   }
 );
 

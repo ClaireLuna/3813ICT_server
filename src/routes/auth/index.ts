@@ -20,7 +20,7 @@ router.post(
   "/register",
   async function (
     req: Request<RegisterModel>,
-    res: Response<{ username: string }>,
+    res: Response<{ token: string }>,
     next
   ) {
     const user = await prisma.user.findFirst({
@@ -38,7 +38,7 @@ router.post(
         },
       });
       if (user?.id) {
-        res.send({ username: req.body.username });
+        res.send({ token: hash });
       } else {
         next(new HttpError(401, "Bad Request"));
       }
