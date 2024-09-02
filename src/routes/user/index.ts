@@ -7,7 +7,7 @@ const router = Router();
 
 // Get all users
 router.get(
-  "/",
+  "/user",
   isUserInRole(["SuperAdmin"]),
   async (req: Request, res: Response) => {
     try {
@@ -20,7 +20,7 @@ router.get(
 );
 
 // Get a single user by ID
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/user/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
@@ -44,7 +44,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 });
 
 // Update a user by ID
-router.put("/:id", async (req: Request, res: Response, next) => {
+router.put("/user/:id", async (req: Request, res: Response, next) => {
   if (req.user == null) return next();
 
   try {
@@ -86,7 +86,7 @@ router.put("/:id", async (req: Request, res: Response, next) => {
 });
 
 // Delete a user by ID
-router.delete("/:id", async (req: Request, res: Response, next) => {
+router.delete("/user/:id", async (req: Request, res: Response, next) => {
   if (req.user == null) return next();
 
   try {
