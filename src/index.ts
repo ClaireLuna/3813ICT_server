@@ -8,6 +8,8 @@ import errorMiddleware from "./middlewares/errorMiddleware";
 import authMiddleware from "./middlewares/authMiddleware";
 import authRouter from "./routes/auth";
 import groupRouter from "./routes/group";
+import userRouter from "./routes/user";
+import channelRouter from "./routes/channel";
 
 dotenv.config();
 
@@ -25,6 +27,8 @@ app.use(errorMiddleware);
 
 app.use("/", groupRouter);
 app.use("/", authRouter);
+app.use("/", userRouter);
+app.use("/", channelRouter);
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);

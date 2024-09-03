@@ -18,17 +18,13 @@ const prisma = new PrismaClient();
 
 router.post(
   "/register",
-  async function (
-    req: Request<RegisterModel>,
-    res: Response<{ token: string }>,
-    next
-  ) {
+  async function (req: Request<RegisterModel>, res: Response, next) {
     const { username, email, password } = req.body;
     const user = await prisma.user.findFirst({
       where: { username: req.body.username },
     });
     if (user) {
-      next(new HttpError(401, "Username already exists"));
+      next(new HttpError(403, "Username already exists"));
     } else {
       const hash = createHash("sha256").update(password).digest("hex");
       const token = createHash("sha256").update(username).digest("hex");
@@ -40,9 +36,16 @@ router.post(
           apiToken: token,
           role: "User",
         },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          apiToken: true,
+          role: true,
+        },
       });
       if (user?.id) {
-        res.send({ token: token });
+        res.json(user);
       } else {
         next(new HttpError(401, "Bad Request"));
       }
@@ -52,17 +55,20 @@ router.post(
 
 router.post(
   "/login",
-  async function (
-    req: Request<LoginModel>,
-    res: Response<{ token: string } | HttpError>,
-    next
-  ) {
+  async function (req: Request<LoginModel>, res: Response<any>, next) {
     const hash = createHash("sha256").update(req.body.password).digest("hex");
     const user = await prisma.user.findFirst({
       where: { username: req.body.username, hash: hash },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        apiToken: true,
+        role: true,
+      },
     });
     if (user) {
-      res.send({ token: user.apiToken });
+      res.json(user);
     } else {
       next(new HttpError(403, "Unauthorised"));
     }
