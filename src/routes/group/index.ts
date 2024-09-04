@@ -25,6 +25,17 @@ router.post(
       },
     });
 
+    await prisma.groupUser.create({
+      data: {
+        user: {
+          connect: { id: req.user.id },
+        },
+        group: {
+          connect: { id: group.id },
+        },
+      },
+    });
+
     res.send(group);
   }
 );
@@ -57,6 +68,25 @@ router.get(
     }
 
     res.send(groups);
+  }
+);
+
+// Get group by ID
+router.get(
+  "/group/:id",
+  isUserInRole(["User", "Admin", "SuperAdmin"]),
+  async function (req: Request<any>, res: Response<any>, next) {
+    if (req.user == null) return next();
+
+    let group = await prisma.group.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!group) {
+      return res.status(404).send({ message: "Group not found" });
+    }
+
+    res.send(group);
   }
 );
 
