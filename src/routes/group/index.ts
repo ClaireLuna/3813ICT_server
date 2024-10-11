@@ -1,8 +1,7 @@
 import express, { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../lib/db";
 import isUserInRole from "../../middlewares/isUserInRole";
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 // Create Group
@@ -44,11 +43,7 @@ router.post(
 router.get(
   "/group",
   isUserInRole(["User", "Admin", "SuperAdmin"]),
-  async function (
-    req: Request,
-    res: Response<{ id: string; name: string }[]>,
-    next
-  ) {
+  async function (req, res: Response<{ id: string; name: string }[]>, next) {
     if (req.user == null) return next();
 
     let groups;

@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import HttpError from "../../errors/HttpError";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../lib/db";
 import { createHash } from "crypto";
 
 export interface LoginModel {
@@ -14,7 +14,6 @@ export interface RegisterModel {
 }
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 router.post(
   "/register",

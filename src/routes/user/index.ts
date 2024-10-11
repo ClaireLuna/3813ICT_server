@@ -1,8 +1,7 @@
 import { Router, Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../lib/db";
 import isUserInRole from "../../middlewares/isUserInRole";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Get all users

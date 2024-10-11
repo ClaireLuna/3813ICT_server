@@ -1,17 +1,14 @@
 import { Router, Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../lib/db";
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Get all channels by group ID
 router.get("/channel/:groupId", async (req: Request, res: Response, next) => {
   if (req.user == null) return next();
   const { groupId } = req.params;
-  const { userRole } = req.headers;
-
   try {
-    if (userRole === "superadmin") {
+    if (req.user.role === "SuperAdmin") {
       const channels = await prisma.channel.findMany({
         where: { groupId: groupId },
       });
@@ -37,7 +34,6 @@ router.get("/channel/:groupId", async (req: Request, res: Response, next) => {
 // Get a channel by ID
 router.get("/channel/:id", async (req: Request, res: Response, next) => {
   if (req.user == null) return next();
-  const { userRole } = req.headers;
   const { id } = req.params;
   try {
     const channel = await prisma.channel.findUnique({
@@ -46,7 +42,7 @@ router.get("/channel/:id", async (req: Request, res: Response, next) => {
 
     if (!channel) {
       res.status(404).json({ error: "Channel not found" });
-    } else if (userRole === "superadmin") {
+    } else if (req.user.role === "SuperAdmin") {
       res.json(channel);
     }
 

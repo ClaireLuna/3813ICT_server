@@ -2,9 +2,10 @@
   "name": "3813ict-server",
   "version": "0.0.0",
   "private": true,
+  "main": "dist/index.js",
   "scripts": {
-    "build": "npx tsc",
-    "dev": "nodemon dist/index.js",
+    "build": "tsc",
+    "dev": "npm run build && nodemon dist/index.js",
     "generate": "prisma generate"
   },
   "dependencies": {
@@ -22,7 +23,8 @@
     "morgan": "~1.9.1",
     "nodemon": "^3.1.4",
     "prisma": "^5.19.0",
-    "save": "^2.9.0"
+    "save": "^2.9.0",
+    "socket.io": "^4.8.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.7",
@@ -32,6 +34,7 @@
     "@types/node": "^22.5.1",
     "ts-node": "^10.9.2",
     "tsc-watch": "^6.2.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.4"
   }
 }

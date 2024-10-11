@@ -28,6 +28,7 @@ model User {
   role      Role        @default(User)
   GroupUser GroupUser[]
   Group     Group[]
+  Message   Message[]
 }
 
 model Group {
@@ -48,8 +49,20 @@ model GroupUser {
 }
 
 model Channel {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  groupId String @db.ObjectId
-  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id      String    @id @default(auto()) @map("_id") @db.ObjectId
+  groupId String    @db.ObjectId
+  group   Group     @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   name    String
+  Message Message[]
+}
+
+model Message {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  channelId String   @db.ObjectId
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  content   String?
+  image     String?
+  createdAt DateTime @default(now())
 }

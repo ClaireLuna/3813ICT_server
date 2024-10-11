@@ -1,15 +1,15 @@
-import express, { Express, Request, Response } from "express";
-import cookieParser from "cookie-parser";
-import logger from "morgan";
-import cors from "cors";
-import { json } from "body-parser";
+import express, { Express, Request, Response, json } from "express";
 import dotenv from "dotenv";
-import errorMiddleware from "./middlewares/errorMiddleware";
-import authMiddleware from "./middlewares/authMiddleware";
-import authRouter from "./routes/auth";
-import groupRouter from "./routes/group";
-import userRouter from "./routes/user";
+import logger from "morgan";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import { createServer } from "http";
 import channelRouter from "./routes/channel";
+import authMiddleware from "./middlewares/authMiddleware";
+import errorMiddleware from "./middlewares/errorMiddleware";
+import groupRouter from "./routes/group";
+import authRouter from "./routes/auth";
+import userRouter from "./routes/user";
 
 dotenv.config();
 
@@ -30,7 +30,10 @@ app.use("/", authRouter);
 app.use("/", userRouter);
 app.use("/", channelRouter);
 
-app.listen(port, () => {
+// Create HTTP server
+const server = createServer(app);
+
+server.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
 });
 
