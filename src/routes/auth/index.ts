@@ -41,6 +41,7 @@ router.post(
           email: true,
           apiToken: true,
           role: true,
+          photo: true,
         },
       });
       if (user?.id) {
@@ -64,6 +65,7 @@ router.post(
         email: true,
         apiToken: true,
         role: true,
+        photo: true,
       },
     });
     if (user) {

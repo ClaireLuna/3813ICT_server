@@ -32,18 +32,18 @@ router.get("/channel/:groupId", async (req: Request, res: Response, next) => {
 });
 
 // Get a channel by ID
-router.get("/channel/:id", async (req: Request, res: Response, next) => {
+router.get("/channel/get/:id", async (req: Request, res: Response, next) => {
   if (req.user == null) return next();
   const { id } = req.params;
   try {
-    const channel = await prisma.channel.findUnique({
+    const channel = await prisma.channel.findFirst({
       where: { id: id },
     });
 
     if (!channel) {
-      res.status(404).json({ error: "Channel not found" });
+      return res.status(404).json({ error: "Channel not found" });
     } else if (req.user.role === "SuperAdmin") {
-      res.json(channel);
+      return res.json(channel);
     }
 
     const userChannel = await prisma.channel.findFirst({
@@ -54,9 +54,9 @@ router.get("/channel/:id", async (req: Request, res: Response, next) => {
     });
 
     if (!userChannel) {
-      res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     } else {
-      res.json(channel);
+      return res.json(channel);
     }
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });

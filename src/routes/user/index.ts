@@ -1,6 +1,7 @@
-import { Router, Request, Response } from "express";
+import express, { Router, Request, Response, response } from "express";
 import prisma from "../../lib/db";
 import isUserInRole from "../../middlewares/isUserInRole";
+import { Readable } from "stream";
 
 const router = Router();
 
@@ -104,6 +105,72 @@ router.put("/user/:id", async (req: Request, res: Response, next) => {
     }
   } catch (error) {
     res.status(500).json({ error: "Failed to update user" });
+  }
+});
+
+router.post(
+  "/user/photo",
+  express.json({ limit: "10mb" }),
+  async (req: Request, res: Response, next) => {
+    if (req.user == null) return next();
+    try {
+      const { id } = req.user;
+      const { photo } = req.body;
+
+      const user = await prisma.user.update({
+        where: {
+          id: id,
+        },
+        data: {
+          photo,
+        },
+      });
+
+      return res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: JSON.stringify(error) });
+    }
+  }
+);
+
+function dataURLtoFile(dataurl: string, filename: string) {
+  var arr = dataurl.split(","),
+    match = arr[0].match(/:(.*?);/),
+    mime = match ? match[1] : "",
+    bstr = atob(arr[arr.length - 1]),
+    n = bstr.length,
+    u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
+router.get("/user/photo/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        photo: true,
+      },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+    } else if (user.photo === null) {
+      res.set("Cache-Control", "public, max-age=300");
+      res.sendFile("default-pfp.png", { root: "src/routes/user" });
+    } else {
+      res.set("Cache-Control", "public, max-age=300");
+      const buffer = Buffer.from(
+        await dataURLtoFile(user.photo, id).arrayBuffer()
+      );
+      Readable.from(buffer).pipe(res);
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch photo" });
   }
 });
 
