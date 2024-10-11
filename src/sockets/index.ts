@@ -40,14 +40,21 @@ export const createSocketServer = (
         throw new Error("Unauthorized");
       }
       socket.data.user = user;
+      socket.data.channelId = channelId;
       socket.join(channelId);
+      next();
     } catch (e) {
       next(new Error("Unauthorized"));
     }
   });
 
+  io.engine.on("connection_error", (err) => {
+    console.error(err.req);
+  });
+
   io.on("connection", async (socket) => {
     io.in(socket.data.channelId).emit("userJoined", socket.data.user.username);
+
     const messages = await prisma.message.findMany({
       where: { channelId: socket.data.channelId },
       select: {

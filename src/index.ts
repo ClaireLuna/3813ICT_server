@@ -10,6 +10,7 @@ import errorMiddleware from "./middlewares/errorMiddleware";
 import groupRouter from "./routes/group";
 import authRouter from "./routes/auth";
 import userRouter from "./routes/user";
+import { createSocketServer } from "./sockets";
 
 dotenv.config();
 
@@ -32,6 +33,8 @@ app.use("/", channelRouter);
 
 // Create HTTP server
 const server = createServer(app);
+
+createSocketServer(server);
 
 server.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
