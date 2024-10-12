@@ -11,10 +11,14 @@ export interface ServerToClientEvents {
   newMessage: (message: MessageResponse) => void;
   userJoined: (name: string) => void;
   userLeft: (name: string) => void;
+  peerId: (message: string) => void;
+  userId: (id: string) => void;
+  ownId: (id: string) => void;
 }
 
 export interface ClientToServerEvents {
   sendMessage: (msg: MessageRequest) => void;
+  peerId: (message: string) => void;
 }
 
 export interface InterServerEvents {}

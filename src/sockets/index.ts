@@ -21,7 +21,7 @@ export const createSocketServer = (
     SocketData
   >(server, {
     cors: {
-      origin: "http://localhost:4200",
+      origin: "*",
       methods: ["GET", "POST"],
     },
   });
@@ -54,6 +54,13 @@ export const createSocketServer = (
 
   io.on("connection", async (socket) => {
     io.in(socket.data.channelId).emit("userJoined", socket.data.user.username);
+
+    io.emit("userId", socket.id);
+    io.to(socket.id).emit("ownId", socket.id);
+    socket.on("peerId", (message) => {
+      io.emit("peerId", message);
+      console.log("peerId: " + message);
+    });
 
     const messages = await prisma.message.findMany({
       where: { channelId: socket.data.channelId },
