@@ -7,7 +7,7 @@ const router = Router();
 
 // Get all users
 router.get("/user", async (req: Request, res: Response, next) => {
-  if (req.user == null) return next();
+  if (req.user == null) return res.status(401).json({ error: "Unauthorized" });
   try {
     let users;
     if (req.user?.role === "SuperAdmin") {
@@ -38,7 +38,8 @@ router.get(
   "/user/current",
   isUserInRole(["User", "Admin", "SuperAdmin"]),
   async (req: Request, res: Response, next) => {
-    if (req.user === null) return next();
+    if (req.user == null)
+      return res.status(401).json({ error: "Unauthorized" });
     try {
       const user = await prisma.user.findFirst({
         where: { id: req.user.id },
@@ -57,7 +58,8 @@ router.get(
 );
 
 // Get a single user by ID
-router.get("/user/:id", async (req: Request, res: Response) => {
+router.get("/user/:id", async (req: Request<{ id: string }>, res: Response) => {
+  if (req.user == null) return res.status(401).json({ error: "Unauthorized" });
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
@@ -81,52 +83,64 @@ router.get("/user/:id", async (req: Request, res: Response) => {
 });
 
 // Update a user by ID
-router.put("/user/:id", async (req: Request, res: Response, next) => {
-  if (req.user == null) return next();
+router.put(
+  "/user/:id",
+  async (
+    req: Request<{ id: string }, { email: string; role: string }>,
+    res: Response,
+    next
+  ) => {
+    if (req.user == null)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const { id } = req.params;
+      const { email, role } = req.body;
+      const loggedInUserId = req.user.id;
+      const loggedInUserRole = req.user.role;
 
-  try {
-    const { id } = req.params;
-    const { email, role } = req.body;
-    const loggedInUserId = req.user.id;
-    const loggedInUserRole = req.user.role;
-
-    if (loggedInUserRole === "SuperAdmin") {
-      const user = await prisma.user.update({
-        where: {
-          id: id,
-        },
-        data: {
-          role,
-        },
-      });
-      res.json(user);
-    } else {
-      if (id !== loggedInUserId) {
-        res
-          .status(403)
-          .json({ error: "You are not authorized to update this user" });
-      } else {
+      if (loggedInUserRole === "SuperAdmin") {
         const user = await prisma.user.update({
           where: {
             id: id,
           },
           data: {
-            email,
+            role,
           },
         });
         res.json(user);
+      } else {
+        if (id !== loggedInUserId) {
+          res
+            .status(403)
+            .json({ error: "You are not authorized to update this user" });
+        } else {
+          const user = await prisma.user.update({
+            where: {
+              id: id,
+            },
+            data: {
+              email,
+            },
+          });
+          res.json(user);
+        }
       }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user" });
     }
-  } catch (error) {
-    res.status(500).json({ error: "Failed to update user" });
   }
-});
+);
 
 router.post(
   "/user/photo",
   express.json({ limit: "10mb" }),
-  async (req: Request, res: Response, next) => {
-    if (req.user == null) return next();
+  async (
+    req: Request<{ id: string }, { photo: string }>,
+    res: Response,
+    next
+  ) => {
+    if (req.user == null)
+      return res.status(401).json({ error: "Unauthorized" });
     try {
       const { id } = req.user;
       const { photo } = req.body;
@@ -147,7 +161,7 @@ router.post(
   }
 );
 
-function dataURLtoFile(dataurl: string, filename: string) {
+export function dataURLtoFile(dataurl: string, filename: string) {
   var arr = dataurl.split(","),
     match = arr[0].match(/:(.*?);/),
     mime = match ? match[1] : "",
@@ -160,67 +174,75 @@ function dataURLtoFile(dataurl: string, filename: string) {
   return new File([u8arr], filename, { type: mime });
 }
 
-router.get("/user/photo/:id", async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const user = await prisma.user.findUnique({
-      where: {
-        id: id,
-      },
-      select: {
-        photo: true,
-      },
-    });
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-    } else if (user.photo === null) {
-      res.set("Cache-Control", "public, max-age=300");
-      res.sendFile("default-pfp.png", { root: "src/routes/user" });
-    } else {
-      res.set("Cache-Control", "public, max-age=300");
-      const buffer = Buffer.from(
-        await dataURLtoFile(user.photo, id).arrayBuffer()
-      );
-      Readable.from(buffer).pipe(res);
-    }
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch photo" });
-  }
-});
-
-// Delete a user by ID
-router.delete("/user/:id", async (req: Request, res: Response, next) => {
-  if (req.user == null) return next();
-
-  try {
-    const { id } = req.params;
-    const role = req.user.role;
-
-    if (role === "SuperAdmin") {
-      await prisma.user.delete({
+router.get(
+  "/user/photo/:id",
+  async (req: Request<{ id: string }>, res: Response) => {
+    if (req.user == null)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const { id } = req.params;
+      const user = await prisma.user.findUnique({
         where: {
           id: id,
         },
+        select: {
+          photo: true,
+        },
       });
-      res.json({ message: "User deleted successfully" });
-    } else {
-      const userId = req.user.id;
-      if (id !== userId) {
-        res
-          .status(403)
-          .json({ error: "You are not authorized to delete this user" });
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+      } else if (user.photo === null) {
+        res.set("Cache-Control", "public, max-age=300");
+        res.sendFile("default-pfp.png", { root: "src/routes/user" });
       } else {
+        res.set("Cache-Control", "public, max-age=300");
+        const buffer = Buffer.from(
+          await dataURLtoFile(user.photo, id).arrayBuffer()
+        );
+        Readable.from(buffer).pipe(res);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch photo" });
+    }
+  }
+);
+
+// Delete a user by ID
+router.delete(
+  "/user/:id",
+  async (req: Request<{ id: string }>, res: Response, next) => {
+    if (req.user == null)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const { id } = req.params;
+      const role = req.user.role;
+
+      if (role === "SuperAdmin") {
         await prisma.user.delete({
           where: {
             id: id,
           },
         });
         res.json({ message: "User deleted successfully" });
+      } else {
+        const userId = req.user.id;
+        if (id !== userId) {
+          res
+            .status(403)
+            .json({ error: "You are not authorized to delete this user" });
+        } else {
+          await prisma.user.delete({
+            where: {
+              id: id,
+            },
+          });
+          res.json({ message: "User deleted successfully" });
+        }
       }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete user" });
     }
-  } catch (error) {
-    res.status(500).json({ error: "Failed to delete user" });
   }
-});
+);
 
 export default router;
