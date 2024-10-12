@@ -53,8 +53,6 @@ export const createSocketServer = (
   });
 
   io.on("connection", async (socket) => {
-    io.in(socket.data.channelId).emit("userJoined", socket.data.user.username);
-
     io.emit("userId", socket.id);
     io.to(socket.id).emit("ownId", socket.id);
     socket.on("peerId", (message) => {
@@ -62,42 +60,52 @@ export const createSocketServer = (
       console.log("peerId: " + message);
     });
 
-    const messages = await prisma.message.findMany({
-      where: { channelId: socket.data.channelId },
-      select: {
-        user: { select: { id: true, username: true } },
-        content: true,
-        image: true,
-      },
-    });
+    if (socket.data.channelId !== null) {
+      io.in(socket.data.channelId).emit(
+        "userJoined",
+        socket.data.user.username
+      );
 
-    socket.emit("allMessages", messages);
-
-    socket.on("sendMessage", async (request) => {
-      const channelId = socket.data.channelId;
-      const msg = await prisma.message.create({
-        data: {
-          content: request.content,
-          image: request.image,
-          channel: { connect: { id: channelId } },
-          user: { connect: { id: socket.data.user.id } },
-        },
+      const messages = await prisma.message.findMany({
+        where: { channelId: socket.data.channelId },
         select: {
           user: { select: { id: true, username: true } },
           content: true,
           image: true,
         },
       });
-      io.in(channelId).emit("newMessage", {
-        user: msg.user,
-        content: msg.content,
-        image: msg.image,
-      });
-    });
 
-    socket.on("disconnect", () => {
-      io.in(socket.data.channelId).emit("userLeft", socket.data.user.username);
-    });
+      socket.emit("allMessages", messages);
+
+      socket.on("sendMessage", async (request) => {
+        const channelId = socket.data.channelId;
+        const msg = await prisma.message.create({
+          data: {
+            content: request.content,
+            image: request.image,
+            channelId: channelId,
+            user: { connect: { id: socket.data.user.id } },
+          },
+          select: {
+            user: { select: { id: true, username: true } },
+            content: true,
+            image: true,
+          },
+        });
+        io.in(channelId).emit("newMessage", {
+          user: msg.user,
+          content: msg.content,
+          image: msg.image,
+        });
+      });
+
+      socket.on("disconnect", () => {
+        io.in(socket.data.channelId).emit(
+          "userLeft",
+          socket.data.user.username
+        );
+      });
+    }
   });
   return io;
 };

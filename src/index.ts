@@ -28,7 +28,7 @@ app.use(logger("dev"));
 app.use(json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({ origin: "*" }));
 
 app.use(authMiddleware);
 app.use(errorMiddleware);
@@ -47,10 +47,13 @@ server.listen(port, () => {
   console.log(`[server]: Server is running at https://localhost:${port}`);
 });
 
-PeerServer({ port: peerPort, path: "/", ssl: sslOptions }, () => {
-  console.log(
-    `[peer]: Peer server is running at https://localhost:${peerPort}`
-  );
-});
+PeerServer(
+  { port: peerPort, path: "/", ssl: sslOptions, corsOptions: { origin: "*" } },
+  () => {
+    console.log(
+      `[peer]: Peer server is running at https://localhost:${peerPort}`
+    );
+  }
+);
 
 export default app;

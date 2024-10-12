@@ -6,18 +6,32 @@ import { Readable } from "stream";
 const router = Router();
 
 // Get all users
-router.get(
-  "/user",
-  isUserInRole(["SuperAdmin"]),
-  async (req: Request, res: Response) => {
-    try {
-      const users = await prisma.user.findMany();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch users" });
+router.get("/user", async (req: Request, res: Response, next) => {
+  if (req.user == null) return next();
+  try {
+    let users;
+    if (req.user?.role === "SuperAdmin") {
+      users = await prisma.user.findMany({
+        where: {
+          id: { not: req.user.id },
+        },
+      });
+    } else {
+      users = await prisma.user.findMany({
+        where: {
+          id: { not: req.user.id },
+        },
+        select: {
+          id: true,
+          username: true,
+        },
+      });
     }
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch users" });
   }
-);
+});
 
 // Get current user
 router.get(
