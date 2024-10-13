@@ -15,7 +15,7 @@ describe("Error Middleware", () => {
   let res: Partial<Response>;
   let next: sinon.SinonSpy;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     req = {};
     res = {
       status: sandbox.stub().returnsThis(),
@@ -24,7 +24,7 @@ describe("Error Middleware", () => {
     next = sandbox.stub();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     sandbox.restore();
   });
 

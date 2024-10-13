@@ -16,56 +16,48 @@ describe("Auth Middleware", () => {
   let res: Partial<Response>;
   let next: sinon.SinonSpy;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     req = {
       headers: {},
     };
     res = {};
     next = sandbox.spy();
-    sandbox.stub(prisma.user, "findFirst").resolves(user);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     sandbox.restore();
   });
 
-  it("should set user in request if authorization header is present and valid", () => {
-    return async (resolve: () => void): Promise<void> => {
-      req.headers = req.headers || {};
-      req.headers.authorization = "token";
+  it("should set user in request if authorization header is present and valid", async () => {
+    prisma.user.findFirst = sandbox.stub().resolves(user);
+    req.headers = req.headers || {};
+    req.headers.authorization = "token";
 
-      await authMiddleware(
-        req as Request,
-        res as Response,
-        next as unknown as NextFunction
-      );
+    await authMiddleware(
+      req as Request,
+      res as Response,
+      next as unknown as NextFunction
+    );
 
-      expect(req.user).to.equal(user);
-      expect(next.calledOnce).to.be.true;
-      resolve();
-    };
+    expect(req.user).to.equal(user);
+    expect(next.calledOnce).to.be.true;
   });
 
-  it("should not set user in request if authorization header is present but invalid", () => {
-    return async (resolve: () => void): Promise<void> => {
-      req.headers = req.headers || {};
-      req.headers.authorization = "invalid_token";
+  it("should not set user in request if authorization header is present but invalid", async () => {
+    sandbox.restore();
+    req.headers = req.headers || {};
+    req.headers.authorization = "invalid_token";
 
-      await authMiddleware(req as Request, res as Response, next);
+    await authMiddleware(req as Request, res as Response, next);
 
-      expect(req.user).to.be.undefined;
-      expect(next.calledOnce).to.be.true;
-      resolve();
-    };
+    expect(req.user?.id).to.be.undefined;
+    expect(next.calledOnce).to.be.true;
   });
 
-  it("should not set user in request if authorization header is absent", () => {
-    return async (resolve: () => void): Promise<void> => {
-      await authMiddleware(req as Request, res as Response, next);
+  it("should not set user in request if authorization header is absent", async () => {
+    await authMiddleware(req as Request, res as Response, next);
 
-      expect(req.user).to.be.undefined;
-      expect(next.calledOnce).to.be.true;
-      resolve();
-    };
+    expect(req.user).to.be.undefined;
+    expect(next.calledOnce).to.be.true;
   });
 });

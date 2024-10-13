@@ -15,7 +15,7 @@ describe("isUserInRole Middleware", () => {
   let res: Partial<Response>;
   let next: sinon.SinonSpy;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     req = {
       user: user,
     };
@@ -23,7 +23,7 @@ describe("isUserInRole Middleware", () => {
     next = sandbox.spy();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     sandbox.restore();
   });
 

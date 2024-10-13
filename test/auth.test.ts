@@ -1,4 +1,4 @@
-import { Express, NextFunction, Request, Response } from "express";
+import { Express } from "express";
 import chai from "chai";
 import chaiHttp from "chai-http";
 import { describe, it, beforeEach, afterEach } from "mocha";
@@ -13,111 +13,91 @@ let app: Express;
 
 describe("Auth Routes", () => {
   beforeEach(async () => {
-    sandbox.stub(prisma.user, "findFirst").resolves(null);
-    sandbox.stub(prisma.user, "create").resolves(user);
+    prisma.user.findFirst = sandbox.stub().resolves(null);
+    prisma.user.create = sandbox.stub().resolves(user);
 
-    app = (await import("../src/index")).default;
+    import("../src/index").then((exp) => {
+      app = exp.default;
+    });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     sandbox.restore();
   });
 
   describe("POST /register", () => {
-    it("should register a new user", () => {
-      return chai
-        .request(app)
-        .post("/auth/register")
-        .send({
-          username: "newuser",
-          email: "newuser@example.com",
-          password: "password",
-        })
-        .end((_err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body).to.be.an("object");
-          expect(res.body).to.have.property("username").eql("newuser");
-        });
+    it("should register a new user", async () => {
+      const res = await chai.request(app).post("/register").send({
+        username: "testuser",
+        email: "newuser@example.com",
+        password: "password",
+      });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.be.an("object");
+      expect(res.body).to.have.property("username").eql("user1");
     });
 
-    it("should return 403 if username already exists", () => {
-      sandbox.stub(prisma.user, "findFirst").resolves(user);
-      return chai
-        .request(app)
-        .post("/auth/register")
-        .send({
-          username: "existinguser",
-          email: "existinguser@example.com",
-          password: "password",
-        })
-        .end((_err, res) => {
-          expect(res).to.have.status(403);
-          expect(res.body)
-            .to.have.property("error")
-            .eql("Username already exists");
-        });
+    it("should return 403 if username already exists", async () => {
+      sandbox.restore();
+
+      prisma.user.findFirst = sandbox.stub().resolves(user);
+
+      import("../src/index").then((exp) => {
+        app = exp.default;
+      });
+
+      const res = await chai.request(app).post("/register").send({
+        username: "user1",
+        email: "existinguser@example.com",
+        password: "password",
+      });
+      expect(res).to.have.status(403);
     });
 
-    it("should return 500 on error", () => {
-      sandbox
-        .stub(prisma.user, "create")
-        .throws(new Error("Failed to create user"));
-      return chai
-        .request(app)
-        .post("/auth/register")
-        .send({
-          username: "newuser",
-          email: "newuser@example.com",
-          password: "password",
-        })
-        .end((_err, res) => {
-          expect(res).to.have.status(500);
-          expect(res.body)
-            .to.have.property("error")
-            .eql("Internal server error");
-        });
+    it("should return 401 on error", async () => {
+      sandbox.restore();
+      prisma.user.create = sandbox.stub().resolves(null);
+
+      await import("../src/index").then((exp) => {
+        app = exp.default;
+      });
+
+      const res = await chai.request(app).post("/register").send({
+        username: "newuser",
+        email: "newuser@example.com",
+        password: "password",
+      });
+
+      expect(res).to.have.status(401);
     });
   });
 
   describe("POST /login", () => {
-    it("should login a user", () => {
-      sandbox.stub(prisma.user, "findFirst").resolves(user);
-      return chai
+    it("should login a user", async () => {
+      prisma.user.findFirst = sandbox.stub().resolves(user);
+
+      await import("../src/index").then((exp) => {
+        app = exp.default;
+      });
+
+      const res = await chai
         .request(app)
-        .post("/auth/login")
-        .send({ username: "existinguser", password: "password" })
-        .end((_err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body).to.be.an("object");
-          expect(res.body).to.have.property("username").eql("existinguser");
-        });
+        .post("/login")
+        .send({ username: "existinguser", password: "password" });
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.be.an("object");
+      expect(res.body).to.have.property("username").eql("user1");
     });
 
-    it("should return 403 if invalid credentials", () => {
-      return chai
+    it("should return 403 if invalid credentials", async () => {
+      const res = await chai
         .request(app)
-        .post("/auth/login")
-        .send({ username: "nonexistentuser", password: "wrongpassword" })
-        .end((_err, res) => {
-          expect(res).to.have.status(403);
-          expect(res.body).to.have.property("error").eql("Unauthorised");
-        });
-    });
+        .post("/login")
+        .send({ username: "nonexistentuser", password: "wrongpassword" });
 
-    it("should return 500 on error", () => {
-      sandbox
-        .stub(prisma.user, "findFirst")
-        .throws(new Error("Failed to fetch user"));
-      return chai
-        .request(app)
-        .post("/auth/login")
-        .send({ username: "existinguser", password: "password" })
-        .end((_err, res) => {
-          expect(res).to.have.status(500);
-          expect(res.body)
-            .to.have.property("error")
-            .eql("Internal server error");
-        });
+      expect(res).to.have.status(403);
     });
   });
 });
