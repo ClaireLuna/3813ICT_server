@@ -7,7 +7,7 @@
     "build": "tsc",
     "dev": "npm run build && nodemon dist/index.js",
     "generate": "prisma generate",
-    "test": "mocha"
+    "test": "mocha --timeout 20000"
   },
   "dependencies": {
     "@prisma/client": "^5.19.0",

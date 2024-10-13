@@ -1,13 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../lib/db";
 
-const prisma = new PrismaClient();
-
-export default async function authMiddleware(
-  req: Request,
-  _: Response,
-  next: NextFunction
-) {
+export default async (req: Request, _: Response, next: NextFunction) => {
   const authorization = req.headers.authorization;
   if (authorization) {
     req.user = await prisma.user.findFirst({
@@ -15,4 +9,4 @@ export default async function authMiddleware(
     });
   }
   next();
-}
+};
