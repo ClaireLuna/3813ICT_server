@@ -6,21 +6,12 @@ import sinon from "sinon";
 import prisma from "../src/lib/db";
 import { Role } from "@prisma/client";
 import * as authMiddleware from "../src/middlewares/authMiddleware";
+import { user } from "./testConstants";
 
 chai.use(chaiHttp);
 const { expect } = chai;
 const sandbox = sinon.createSandbox();
 var app: Express;
-
-const user = {
-  id: "66d6ef35dd3a1615cf637c75",
-  username: "user1",
-  photo: null,
-  email: "asd@asd.com",
-  hash: "asdasd",
-  apiToken: "token",
-  role: Role.SuperAdmin,
-};
 
 describe("User Routes", () => {
   beforeEach(async () => {
