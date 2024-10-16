@@ -177,8 +177,6 @@ export function dataURLtoFile(dataurl: string, filename: string) {
 router.get(
   "/user/photo/:id",
   async (req: Request<{ id: string }>, res: Response) => {
-    if (req.user == null)
-      return res.status(401).json({ error: "Unauthorized" });
     try {
       const { id } = req.params;
       const user = await prisma.user.findUnique({
